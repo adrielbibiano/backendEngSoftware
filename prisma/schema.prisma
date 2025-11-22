@@ -1,0 +1,83 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Use environment variable for production/deploy (Render). Locally
+  // you can set DATABASE_URL in a .env file. The current DB used in
+  // development was the one provided by the professor; set the real
+  // DATABASE_URL in your Render service environment variables.
+  url = env("DATABASE_URL")
+}
+
+// --- Tabela Exigida pelo Trabalho (Login/Auth) ---
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+// --- Tabelas do PDF do Professor (Coleta RMR) ---
+
+model Municipio {
+  id              Int               @id @default(autoincrement())
+  nome            String            @db.VarChar(100)
+  
+  escolas         Escola[]
+  servicosColeta  ServicoDeColeta[]
+}
+
+model Escola {
+  id              Int               @id @default(autoincrement())
+  nome            String            @db.VarChar(150)
+  tipo            String?           @db.VarChar(50)
+  idMunicipio     Int
+  
+  municipio       Municipio         @relation(fields: [idMunicipio], references: [id])
+  
+  infraestruturas Infraestrutura[]
+  servicosColeta  ServicoDeColeta[]
+}
+
+model Infraestrutura {
+  id       Int    @id @default(autoincrement())
+  tipo     String @db.VarChar(150)
+  idEscola Int
+  
+  escola   Escola @relation(fields: [idEscola], references: [id])
+}
+
+model DestinoDoLixo {
+  id                 Int                 @id @default(autoincrement())
+  tipo               String              @db.VarChar(100)
+  
+  tratamentoResiduos TratamentoResiduos?
+  servicosColeta     ServicoDeColeta[]
+}
+
+model TratamentoResiduos {
+  id         Int           @id @default(autoincrement())
+  metodos    String?       @db.VarChar(200)
+  eficiencia String?       @db.VarChar(100)
+  idDestino  Int           @unique
+  
+  destino    DestinoDoLixo @relation(fields: [idDestino], references: [id])
+}
+
+model ServicoDeColeta {
+  id          Int    @id @default(autoincrement())
+  tipo        String? @db.VarChar(100)
+  frequencia  String? @db.VarChar(50)
+  
+  idEscola    Int
+  idMunicipio Int
+  idDestino   Int
+  
+  escola      Escola        @relation(fields: [idEscola], references: [id])
+  municipio   Municipio     @relation(fields: [idMunicipio], references: [id])
+  destino     DestinoDoLixo @relation(fields: [idDestino], references: [id])
+}
