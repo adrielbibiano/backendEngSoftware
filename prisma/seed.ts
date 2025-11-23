@@ -23,15 +23,17 @@ async function main() {
   }
 
   // --- 2. Inserir os Tipos de Destino do Lixo (Baseado na imagem) ---
-  const tiposDestino = [
-    'Serviço de coleta',
-    'Queima',
-    'Enterra',
-    'Leva a uma destinação final financiada pelo poder público',
-    'Descarta em outra área',
-    'Joga em outra área',
-    'Outros'
-  ];
+// ... dentro do main()
+const tiposDestino = [
+  'Serviço de coleta',
+  'Queima',
+  'Enterra',
+  'Destino Público', 
+  'Descarta em outra área',
+  'Joga em outra área',
+  'Outros'
+];
+// ...
 
   console.log('Inserindo tipos de destino...');
   for (const tipo of tiposDestino) {
