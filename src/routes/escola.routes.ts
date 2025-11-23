@@ -122,3 +122,6 @@ router.put('/:id', escolaController.atualizar);
 router.delete('/:id', escolaController.deletar);
 
 export default router;
+
+
+// Fix swagger indentation
