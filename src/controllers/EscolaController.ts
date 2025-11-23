@@ -40,24 +40,47 @@ export class EscolaController {
     }
   }
 
-  // 3. CRIAR (CREATE)
-  async criar(req: Request, res: Response) {
-    const { nome, tipo, idMunicipio } = req.body;
-    try {
-      const novaEscola = await prisma.escola.create({
+// No método criar (create) do EscolaController.ts
+
+async criar(req: Request, res: Response) {
+  // Recebemos agora o idDestino também
+  const { nome, tipo, idMunicipio, idDestino } = req.body; 
+
+  try {
+    // Usa uma transação para garantir que cria tudo ou nada
+    const resultado = await prisma.$transaction(async (tx) => {
+      
+      // 1. Cria a Escola
+      const novaEscola = await tx.escola.create({
         data: {
           nome,
           tipo,
           idMunicipio: Number(idMunicipio)
         }
       });
-      return res.status(201).json(novaEscola);
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Erro ao criar escola' });
-    }
-  }
 
+      // 2. Se o usuário escolheu um destino, cria o serviço de coleta vinculado
+      if (idDestino) {
+        await tx.servicoDeColeta.create({
+          data: {
+            tipo: 'Coleta Padrão', // Pode ser dinâmico depois se quiser
+            frequencia: 'Não informada',
+            idEscola: novaEscola.id,
+            idMunicipio: Number(idMunicipio),
+            idDestino: Number(idDestino)
+          }
+        });
+      }
+
+      return novaEscola;
+    });
+
+    return res.status(201).json(resultado);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro ao criar escola e serviço.' });
+  }
+}
   // 4. ATUALIZAR (UPDATE)
   async atualizar(req: Request, res: Response) {
     const { id } = req.params;
