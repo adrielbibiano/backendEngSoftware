@@ -29,4 +29,4 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Gerado automaticamente pelo GitHub
-          SONAR_TOKEN: c14f6cdf46cd2dfdda4e2724c9ccd648239f8cfe   # Aquele que criamos no passo 2
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Aquele que criamos no passo 2
