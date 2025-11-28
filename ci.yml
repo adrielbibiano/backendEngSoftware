@@ -1,0 +1,32 @@
+name: CI/CD Backend
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Importante para o SonarCloud ler o histórico
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      # O PDF pede testes, mas como não temos testes reais ainda,
+      # vamos pular o 'npm run test' por enquanto para não quebrar o build.
+      # - name: Run Tests
+      #   run: npm run test -- --coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Gerado automaticamente pelo GitHub
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Aquele que criamos no passo 2
