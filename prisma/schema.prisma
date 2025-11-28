@@ -17,7 +17,8 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String
+  password  String?  // <--- O "?" torna a senha opcional (aceita null)
+  googleId  String?  @unique // <--- O "?" torna opcional, @unique garante 1 por pessoa
   createdAt DateTime @default(now())
 }
 
@@ -47,8 +48,8 @@ model Infraestrutura {
   id       Int    @id @default(autoincrement())
   tipo     String @db.VarChar(150)
   idEscola Int
-  
-  escola   Escola @relation(fields: [idEscola], references: [id])
+  escola   Escola @relation(fields: [idEscola], references: [id], onDelete: Cascade) // <--- Adicione isso
+
 }
 
 model DestinoDoLixo {
@@ -69,7 +70,7 @@ model TratamentoResiduos {
 }
 
 model ServicoDeColeta {
-  id          Int    @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   tipo        String? @db.VarChar(100)
   frequencia  String? @db.VarChar(50)
   
@@ -77,7 +78,11 @@ model ServicoDeColeta {
   idMunicipio Int
   idDestino   Int
   
-  escola      Escola        @relation(fields: [idEscola], references: [id])
+  // A relação com escola fica nesta linha
+  escola      Escola        @relation(fields: [idEscola], references: [id], onDelete: Cascade)
+  
+  // A relação com municipio PRECISA ficar numa linha nova, sem "//" antes dela
   municipio   Municipio     @relation(fields: [idMunicipio], references: [id])
+  
   destino     DestinoDoLixo @relation(fields: [idDestino], references: [id])
 }

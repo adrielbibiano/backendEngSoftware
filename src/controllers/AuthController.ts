@@ -30,4 +30,18 @@ export class AuthController {
       return res.status(401).json({ error: "Autenticação falhou" });
     }
   }
+
+async googleLogin(req: Request, res: Response) {
+  const { token } = req.body; // Recebe o token do front
+  try {
+    const result = await authService.loginWithGoogle(token);
+    return res.json({
+        user: result.user,
+        accessToken: result.accessToken
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ error: "Falha no login com Google" });
+  }
+}
 }

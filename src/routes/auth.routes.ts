@@ -7,5 +7,5 @@ const authController = new AuthController();
 
 router.post('/register', authController.register); // Rota para criar conta
 router.post('/login', authController.login);       // Rota para logar
-
+router.post('/google', authController.googleLogin);
 export default router;

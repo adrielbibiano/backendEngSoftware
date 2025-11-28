@@ -1,54 +1,93 @@
-// src/services/AuthService.ts
 import { PrismaClient } from '@prisma/client';
-import { compare, hash } from 'bcryptjs';
+import { hash, compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 
 const prisma = new PrismaClient();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class AuthService {
   
-  // Função para CRIAR um usuário (para a gente poder testar)
-  async register(email: string, password: string) {
-    // Criptografa a senha antes de salvar
-    const passwordHash = await hash(password, 8);
+  // 1. REGISTRO COM EMAIL/SENHA
+  async register(email: string, password?: string) {
+    // Verifica se já existe
+    const userExists = await prisma.user.findUnique({ where: { email } });
+    if (userExists) {
+      throw new Error("Usuário já existe");
+    }
+
+    // Se tiver senha, criptografa. Se não (Google), deixa null.
+    const passwordHash = password ? await hash(password, 8) : null;
 
     const user = await prisma.user.create({
       data: {
         email,
-        password: passwordHash
-      }
+        password: passwordHash,
+      },
     });
 
     return user;
   }
 
-  // Função para LOGAR (Autenticar)
+  // 2. LOGIN NORMAL
   async login(email: string, password: string) {
-    // 1. Verifica se o usuário existe
-    const user = await prisma.user.findUnique({
-      where: { email }
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    if (!user || !user.password) {
+      throw new Error("Usuário ou senha inválidos");
+    }
+
+    const passwordMatch = await compare(password, user.password);
+    if (!passwordMatch) {
+      throw new Error("Usuário ou senha inválidos");
+    }
+
+    const token = sign({ id: user.id }, process.env.JWT_SECRET || "seusecret", {
+      expiresIn: "1d",
     });
 
+    return { user, accessToken: token };
+  }
+
+  // 3. LOGIN SOCIAL (GOOGLE)
+  async loginWithGoogle(tokenGoogle: string) {
+    // Verifica se o token do Google é real
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokenGoogle,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) throw new Error("Token Google inválido");
+
+    const { email, sub: googleId } = payload;
+
+    // Procura usuário pelo email
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    // Se não existe, CRIA automaticamente
     if (!user) {
-      throw new Error("Usuário ou senha incorretos");
+      user = await prisma.user.create({
+        data: {
+          email,
+          googleId,
+          password: null, // Sem senha
+        }
+      });
+    } 
+    // Se existe mas não tem googleId vinculado, vincula agora
+    else if (!user.googleId) {
+      user = await prisma.user.update({
+        where: { email },
+        data: { googleId }
+      });
     }
 
-    // 2. Compara a senha enviada com a senha criptografada no banco
-    const passwordMatch = await compare(password, user.password);
+    // Gera o NOSSO token JWT
+    const token = sign({ id: user.id }, process.env.JWT_SECRET || "seusecret", {
+      expiresIn: "1d",
+    });
 
-    if (!passwordMatch) {
-      throw new Error("Usuário ou senha incorretos");
-    }
-
-    // use env-based secret; fallback only for local dev
-    const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
-    const token = sign(
-      { id: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-
-    // return shape uses 'accessToken' so frontend code can read consistently
     return { user, accessToken: token };
   }
 }
