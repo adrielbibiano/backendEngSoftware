@@ -1,6 +1,6 @@
 // src/controllers/AuthController.ts
-import { Request, Response } from "express";
-import { AuthService } from "../services/AuthService";
+import { Request, Response } from 'express';
+import { AuthService } from '../services/AuthService';
 
 const authService = new AuthService();
 
@@ -11,7 +11,7 @@ export class AuthController {
       const user = await authService.register(email, password);
       return res.status(201).json(user);
     } catch (error) {
-      return res.status(400).json({ error: "Erro ao criar usuário" });
+      return res.status(400).json({ error: 'Erro ao criar usuário' });
     }
   }
 
@@ -26,7 +26,7 @@ export class AuthController {
       };
       return res.json(normalized);
     } catch (error) {
-      return res.status(401).json({ error: "Autenticação falhou" });
+      return res.status(401).json({ error: 'Autenticação falhou' });
     }
   }
 
@@ -40,7 +40,7 @@ export class AuthController {
       });
     } catch (error) {
       console.error(error);
-      return res.status(400).json({ error: "Falha no login com Google" });
+      return res.status(400).json({ error: 'Falha no login com Google' });
     }
   }
 }

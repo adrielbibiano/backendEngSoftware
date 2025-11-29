@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { hash, compare } from "bcryptjs";
-import { sign } from "jsonwebtoken";
-import { OAuth2Client } from "google-auth-library";
+import { PrismaClient } from '@prisma/client';
+import { hash, compare } from 'bcryptjs';
+import { sign } from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 
 const prisma = new PrismaClient();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -12,7 +12,7 @@ export class AuthService {
     // Verifica se já existe
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
-      throw new Error("Usuário já existe");
+      throw new Error('Usuário já existe');
     }
 
     // Se tiver senha, criptografa. Se não (Google), deixa null.
@@ -33,16 +33,16 @@ export class AuthService {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user || !user.password) {
-      throw new Error("Usuário ou senha inválidos");
+      throw new Error('Usuário ou senha inválidos');
     }
 
     const passwordMatch = await compare(password, user.password);
     if (!passwordMatch) {
-      throw new Error("Usuário ou senha inválidos");
+      throw new Error('Usuário ou senha inválidos');
     }
 
-    const token = sign({ id: user.id }, process.env.JWT_SECRET || "seusecret", {
-      expiresIn: "1d",
+    const token = sign({ id: user.id }, process.env.JWT_SECRET || 'seusecret', {
+      expiresIn: '1d',
     });
 
     return { user, accessToken: token };
@@ -57,7 +57,7 @@ export class AuthService {
     });
 
     const payload = ticket.getPayload();
-    if (!payload || !payload.email) throw new Error("Token Google inválido");
+    if (!payload || !payload.email) throw new Error('Token Google inválido');
 
     const { email, sub: googleId } = payload;
 
@@ -83,8 +83,8 @@ export class AuthService {
     }
 
     // Gera o NOSSO token JWT
-    const token = sign({ id: user.id }, process.env.JWT_SECRET || "seusecret", {
-      expiresIn: "1d",
+    const token = sign({ id: user.id }, process.env.JWT_SECRET || 'seusecret', {
+      expiresIn: '1d',
     });
 
     return { user, accessToken: token };
