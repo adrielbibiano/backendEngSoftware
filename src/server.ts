@@ -2,8 +2,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import YAML from "yamljs";
 import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc";
+
 import escolaRoutes from "./routes/escola.routes";
 import authRoutes from "./routes/auth.routes";
 
@@ -24,18 +26,31 @@ app.use(
   })
 );
 
-// --- Swagger setup (minimal) ---
-const swaggerOptions = {
-  definition: {
-    openapi: "3.0.0",
-    info: { title: "Sistema Coleta API", version: "1.0.0" },
-    servers: [{ url: process.env.API_URL || "http://localhost:3000" }],
-  },
-  apis: ["./src/routes/*.ts", "./src/controllers/*.ts"],
-};
+// --- Swagger setup---
+const openapiFilePath = path.join(
+  __dirname,
+  "..",
+  "openapi",
+  "v1",
+  "openapi.yaml"
+);
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// carregar o YAML para uso no Swagger UI
+const openapiDocumentV1 = YAML.load(openapiFilePath);
+
+// rota pública servindo o YAML
+app.get("/openapi/v1/openapi.yaml", (req, res) => {
+  res.sendFile(openapiFilePath);
+});
+
+// Swagger UI apontando para o YAML
+app.use(
+  "/docs/v1",
+  swaggerUi.serve,
+  swaggerUi.setup(openapiDocumentV1, {
+    explorer: true,
+  })
+);
 
 // --- Configuração das Rotas ---
 app.use("/escolas", escolaRoutes);
@@ -77,9 +92,9 @@ app.get("/dashboard/stats", async (req, res) => {
     });
 
     // Formata para o padrão que o ECharts gosta (name e value)
-    const grafico = dados.map((item) => ({
+    const grafico = dados.map((item: any) => ({
       name: item.tipo,
-      value: item._count.servicosColeta,
+      value: item._count?.servicosColeta ?? 0,
     }));
 
     res.json(grafico);

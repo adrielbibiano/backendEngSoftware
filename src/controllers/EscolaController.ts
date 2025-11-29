@@ -1,6 +1,7 @@
 // src/controllers/EscolaController.ts
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -48,7 +49,7 @@ export class EscolaController {
 
     try {
       // Usa uma transação para garantir que cria tudo ou nada
-      const resultado = await prisma.$transaction(async (tx) => {
+      const resultado = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // 1. Cria a Escola
         const novaEscola = await tx.escola.create({
           data: {

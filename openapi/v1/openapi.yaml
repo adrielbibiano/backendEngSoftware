@@ -1,0 +1,82 @@
+openapi: 3.0.3
+info:
+  title: Sistema Coleta API
+  version: "1.0.0"
+  description: API da aplicação — versão v1
+servers:
+  - url: "${API_URL}"
+  - url: "http://localhost:3000"
+
+paths:
+  /municipios:
+    get:
+      summary: Lista municípios
+      responses:
+        "200":
+          description: Lista de municípios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /destinos:
+    get:
+      summary: Lista destinos do lixo
+      responses:
+        "200":
+          description: Lista de destinos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /escolas:
+    get:
+      summary: Lista escolas (rotas do seu projeto)
+      responses:
+        "200":
+          description: Lista de escolas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
