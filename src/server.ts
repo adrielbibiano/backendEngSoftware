@@ -1,9 +1,9 @@
-// src/server.ts
 import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import fs from 'fs';
 import path from 'path';
 import YAML from 'yamljs';
@@ -19,7 +19,23 @@ const prisma = new PrismaClient();
 
 const app = express();
 
+// --- Middlewares globais ---
 app.use(express.json());
+
+//Helmet com Content Security Policy (CSP)
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Swagger precisa de inline scripts
+      styleSrc: ["'self'", "'unsafe-inline'"],  // Swagger precisa de inline styles
+      imgSrc: ["'self'", "data:"],              // permite imagens inline/base64
+      connectSrc: ["'self'"],                   // conexões apenas com a própria API
+    },
+  }),
+);
+
+// CORS: permitir acesso do frontend
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || '*',
@@ -27,15 +43,15 @@ app.use(
   }),
 );
 
+// --- Rota de teste para verificar Helmet ---
+app.get('/', (req, res) => {
+  res.send('API rodando com Helmet 🚀');
+});
+
 // --- Swagger/OpenAPI: resolução robusta do caminho do YAML ---
 const possiblePaths = [
-  // quando executado a partir da raiz do projeto (ex: npm run dev)
   path.join(process.cwd(), 'openapi', 'v1', 'openapi.yaml'),
-
-  // quando compilado para dist/src/server.js (dirname = dist/src -> ../openapi => dist/openapi)
   path.join(__dirname, '..', 'openapi', 'v1', 'openapi.yaml'),
-
-  // outro layout possível (dist/server.js)
   path.join(__dirname, '..', '..', 'openapi', 'v1', 'openapi.yaml'),
 ];
 
@@ -46,19 +62,15 @@ if (!openapiFilePath) {
     'OpenAPI file not found. Paths tried:\n' +
       possiblePaths.map((p) => '  - ' + p).join('\n'),
   );
-  // encerra com erro para que a plataforma de deploy marque como falho
   process.exit(1);
 }
 
-// carregar o YAML somente após confirmar que o arquivo existe
 const openapiDocumentV1 = YAML.load(openapiFilePath);
 
-// rota pública servindo o YAML (usa caminho absoluto)
 app.get('/openapi/v1/openapi.yaml', (req, res) => {
   res.sendFile(openapiFilePath);
 });
 
-// Swagger UI apontando para o YAML carregado
 app.use(
   '/docs/v1',
   swaggerUi.serve,
@@ -71,7 +83,6 @@ app.use(
 app.use('/escolas', escolaRoutes);
 app.use('/auth', authRoutes);
 
-// Rota para listar Municípios (usada no Select do Front)
 app.get('/municipios', async (req, res) => {
   try {
     const municipios = await prisma.municipio.findMany({
@@ -84,7 +95,6 @@ app.get('/municipios', async (req, res) => {
   }
 });
 
-// Listar tipos de Destino do Lixo
 app.get('/destinos', async (req, res) => {
   try {
     const destinos = await prisma.destinoDoLixo.findMany();
@@ -95,7 +105,6 @@ app.get('/destinos', async (req, res) => {
   }
 });
 
-// Rota para Estatísticas do Dashboard
 app.get('/dashboard/stats', async (req, res) => {
   try {
     const dados = await prisma.destinoDoLixo.findMany({
@@ -118,7 +127,7 @@ app.get('/dashboard/stats', async (req, res) => {
   }
 });
 
-// Iniciar o servidor (Sempre por último)
+// --- Iniciar o servidor ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
