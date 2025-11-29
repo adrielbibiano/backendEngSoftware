@@ -1,7 +1,10 @@
 // src/server.ts
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import YAML from "yamljs";
 import swaggerUi from "swagger-ui-express";
@@ -9,12 +12,10 @@ import swaggerUi from "swagger-ui-express";
 import escolaRoutes from "./routes/escola.routes";
 import authRoutes from "./routes/auth.routes";
 
-// 1. Importar o Prisma Client
+// 1. Importar o Prisma Client (depois de dotenv.config())
 import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
 
-// load env config early
-dotenv.config();
+const prisma = new PrismaClient();
 
 const app = express();
 
@@ -26,24 +27,37 @@ app.use(
   })
 );
 
-// --- Swagger setup---
-const openapiFilePath = path.join(
-  __dirname,
-  "..",
-  "openapi",
-  "v1",
-  "openapi.yaml"
-);
+// --- Swagger/OpenAPI: resolução robusta do caminho do YAML ---
+const possiblePaths = [
+  // quando executado a partir da raiz do projeto (ex: npm run dev)
+  path.join(process.cwd(), "openapi", "v1", "openapi.yaml"),
 
-// carregar o YAML para uso no Swagger UI
+  // quando compilado para dist/src/server.js (dirname = dist/src -> ../openapi => dist/openapi)
+  path.join(__dirname, "..", "openapi", "v1", "openapi.yaml"),
+
+  // outro layout possível (dist/server.js)
+  path.join(__dirname, "..", "..", "openapi", "v1", "openapi.yaml"),
+];
+
+const openapiFilePath = possiblePaths.find((p) => fs.existsSync(p));
+
+if (!openapiFilePath) {
+  console.error(
+    "OpenAPI file not found. Paths tried:\n" + possiblePaths.map((p) => "  - " + p).join("\n")
+  );
+  // encerra com erro para que a plataforma de deploy marque como falho
+  process.exit(1);
+}
+
+// carregar o YAML somente após confirmar que o arquivo existe
 const openapiDocumentV1 = YAML.load(openapiFilePath);
 
-// rota pública servindo o YAML
+// rota pública servindo o YAML (usa caminho absoluto)
 app.get("/openapi/v1/openapi.yaml", (req, res) => {
   res.sendFile(openapiFilePath);
 });
 
-// Swagger UI apontando para o YAML
+// Swagger UI apontando para o YAML carregado
 app.use(
   "/docs/v1",
   swaggerUi.serve,
@@ -64,7 +78,7 @@ app.get("/municipios", async (req, res) => {
     });
     res.json(municipios);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar municípios:", error);
     res.status(500).json({ error: "Erro ao buscar municípios" });
   }
 });
@@ -75,23 +89,22 @@ app.get("/destinos", async (req, res) => {
     const destinos = await prisma.destinoDoLixo.findMany();
     res.json(destinos);
   } catch (error) {
+    console.error("Erro ao buscar destinos:", error);
     res.status(500).json({ error: "Erro ao buscar destinos" });
   }
 });
 
-// Rota para Estatísticas do Dashboard (Movi para cá, antes do listen)
+// Rota para Estatísticas do Dashboard
 app.get("/dashboard/stats", async (req, res) => {
   try {
-    // Busca todos os destinos e conta quantos serviços de coleta estão ligados a eles
     const dados = await prisma.destinoDoLixo.findMany({
       include: {
         _count: {
-          select: { servicosColeta: true }, // Conta quantas escolas usam esse destino
+          select: { servicosColeta: true },
         },
       },
     });
 
-    // Formata para o padrão que o ECharts gosta (name e value)
     const grafico = dados.map((item: any) => ({
       name: item.tipo,
       value: item._count?.servicosColeta ?? 0,
@@ -99,7 +112,7 @@ app.get("/dashboard/stats", async (req, res) => {
 
     res.json(grafico);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar estatísticas:", error);
     res.status(500).json({ error: "Erro ao buscar estatísticas" });
   }
 });
@@ -108,4 +121,6 @@ app.get("/dashboard/stats", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`📘 Swagger UI: http://localhost:${PORT}/docs/v1`);
+  console.log(`📄 OpenAPI YAML served from: ${openapiFilePath}`);
 });
