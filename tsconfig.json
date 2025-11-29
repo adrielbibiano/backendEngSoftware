@@ -8,6 +8,7 @@
     "skipLibCheck": true,
     "moduleResolution": "node",
     "module": "commonjs",
-    "typeRoots": ["./src/types", "./node_modules/@types"]
-  }
+    "typeRoots": ["./src/types", "./node_modules/@types", "node", "vitest/globals"],
+  },
+   "include": ["src", "vitest.config.ts"]
 }
