@@ -1,11 +1,10 @@
 // src/controllers/AuthController.ts
-import { Request, Response } from 'express';
-import { AuthService } from '../services/AuthService';
+import { Request, Response } from "express";
+import { AuthService } from "../services/AuthService";
 
 const authService = new AuthService();
 
 export class AuthController {
-  
   async register(req: Request, res: Response) {
     const { email, password } = req.body;
     try {
@@ -31,17 +30,17 @@ export class AuthController {
     }
   }
 
-async googleLogin(req: Request, res: Response) {
-  const { token } = req.body; // Recebe o token do front
-  try {
-    const result = await authService.loginWithGoogle(token);
-    return res.json({
+  async googleLogin(req: Request, res: Response) {
+    const { token } = req.body; // Recebe o token do front
+    try {
+      const result = await authService.loginWithGoogle(token);
+      return res.json({
         user: result.user,
-        accessToken: result.accessToken
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({ error: "Falha no login com Google" });
+        accessToken: result.accessToken,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(400).json({ error: "Falha no login com Google" });
+    }
   }
-}
 }

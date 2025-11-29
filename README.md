@@ -33,7 +33,6 @@ npm run dev
 
 A API ficará disponível em `http://localhost:3000`.
 
-
 ## Testes rápidos (curl)
 
 - Fazer login (verifica formato de resposta { user, accessToken }):
@@ -49,7 +48,6 @@ curl -s -X POST http://localhost:3000/auth/login \
 ```bash
 curl http://localhost:3000/escolas | jq
 ```
-
 
 ## Deploy no Render (ou outro provider)
 
@@ -71,16 +69,15 @@ Defina estas variáveis de ambiente no painel do Render:
 - `API_URL` — URL pública do backend (ex: `https://seu-backend.onrender.com`).
 
 Observações:
+
 - O `prisma/schema.prisma` foi alterado para usar `env("DATABASE_URL")` (em vez de um URL hardcoded) — garanta que `DATABASE_URL` esteja definido no ambiente do Render.
 - Depois de configurar `DATABASE_URL` no Render, rode `npx prisma db push` ou configure `prisma migrate` conforme seu fluxo para aplicar o schema (ou rode o seed se necessário).
-
 
 ## Segurança e boas práticas
 
 - Nunca publique seu `JWT_SECRET` ou `DATABASE_URL` contendo credenciais em repositórios públicos.
 - Use `ENV` vars do Render (ou secret manager) para esconder segredos.
 - Em produção prefira rodar o build (compilar TypeScript) e iniciar `node dist/server.js` em vez de `ts-node`.
-
 
 ## Contato
 

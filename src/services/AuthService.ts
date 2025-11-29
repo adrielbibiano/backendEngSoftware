@@ -1,13 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import { hash, compare } from 'bcryptjs';
-import { sign } from 'jsonwebtoken';
-import { OAuth2Client } from 'google-auth-library';
+import { PrismaClient } from "@prisma/client";
+import { hash, compare } from "bcryptjs";
+import { sign } from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 
 const prisma = new PrismaClient();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class AuthService {
-  
   // 1. REGISTRO COM EMAIL/SENHA
   async register(email: string, password?: string) {
     // Verifica se já existe
@@ -32,7 +31,7 @@ export class AuthService {
   // 2. LOGIN NORMAL
   async login(email: string, password: string) {
     const user = await prisma.user.findUnique({ where: { email } });
-    
+
     if (!user || !user.password) {
       throw new Error("Usuário ou senha inválidos");
     }
@@ -56,7 +55,7 @@ export class AuthService {
       idToken: tokenGoogle,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-    
+
     const payload = ticket.getPayload();
     if (!payload || !payload.email) throw new Error("Token Google inválido");
 
@@ -72,14 +71,14 @@ export class AuthService {
           email,
           googleId,
           password: null, // Sem senha
-        }
+        },
       });
-    } 
+    }
     // Se existe mas não tem googleId vinculado, vincula agora
     else if (!user.googleId) {
       user = await prisma.user.update({
         where: { email },
-        data: { googleId }
+        data: { googleId },
       });
     }
 
