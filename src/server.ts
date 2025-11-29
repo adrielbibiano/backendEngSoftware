@@ -6,6 +6,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import escolaRoutes from "./routes/escola.routes";
 import authRoutes from "./routes/auth.routes";
+import helmet from "helmet";
 
 // 1. Importar o Prisma Client
 import { PrismaClient } from "@prisma/client";
@@ -13,6 +14,8 @@ const prisma = new PrismaClient();
 
 // load env config early
 dotenv.config();
+
+app.use(helmet());
 
 const app = express();
 
